@@ -1,0 +1,11 @@
+{
+  "domain": "family_calendar",
+  "name": "Family Calendar",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["calendar"],
+  "after_dependencies": ["google"],
+  "documentation": "",
+  "iot_class": "local_polling",
+  "version": "1.0.0"
+}

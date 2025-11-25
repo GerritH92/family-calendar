@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=3.5.1">
+    <title>Family Calendar v3.5</title>
+</head>
+<body>
+    <div class="header-container">
+        <div class="calendar-header">
+            <button class="nav-button" onclick="previousWeek()">‹</button>
+            <div class="week-title" id="week-title">Week View</div>
+            <button class="nav-button" onclick="nextWeek()">›</button>
+        </div>
+        <div class="live-clock">
+            <div class="live-time" id="live-time">00:00</div>
+            <div class="live-date" id="live-date">Loading...</div>
+        </div>
+        <div class="header-actions">
+            <button class="add-event-button" onclick="openAddEventModal()">+ Add Event</button>
+        </div>
+    </div>
+    
+    <div class="calendar-pills">
+        <div class="pills-label">Calendars</div>
+        <div class="pill-list" id="filterList"></div>
+    </div>
+    <div class="week-grid" id="week-grid">
+        Loading...
+    </div>
+    
+    <!-- Event Details Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeEventModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-event-title">Event Details</h2>
+                <button class="modal-close" onclick="closeEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <div class="modal-label">Time</div>
+                    <div class="modal-value" id="modal-event-time"></div>
+                </div>
+                <div class="modal-field">
+                    <div class="modal-label">Calendar</div>
+                    <div class="modal-value">
+                        <span class="modal-calendar-badge" id="modal-event-calendar"></span>
+                    </div>
+                </div>
+                <div class="modal-field" id="modal-event-location-field" style="display: none;">
+                    <div class="modal-label">Location</div>
+                    <div class="modal-value" id="modal-event-location"></div>
+                </div>
+                <div class="modal-field" id="modal-event-description-field" style="display: none;">
+                    <div class="modal-label">Description</div>
+                    <div class="modal-value" id="modal-event-description"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Close</button>
+                <button type="button" class="btn btn-danger" id="modal-delete-button" onclick="deleteSelectedEvent()">Delete Event</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Event Modal -->
+    <div class="modal-overlay" id="add-event-modal" onclick="closeAddEventModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Event</h2>
+                <button class="modal-close" onclick="closeAddEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addEventForm" onsubmit="submitEvent(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="eventTitle">Event Title *</label>
+                        <input type="text" id="eventTitle" class="form-input modal-input-large" required placeholder="Enter event title">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="eventCalendar">Calendar *</label>
+                        <select id="eventCalendar" class="form-select" required>
+                            <option value="">Select a calendar</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row-center">
+                        <label class="switch">
+                            <input type="checkbox" id="eventAllDay" onchange="toggleTimeInputs()">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="modal-label-inline">All Day Event</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="eventStartDate">Start Date *</label>
+                            <input type="date" id="eventStartDate" class="form-input" required onchange="updateEndDate()">
+                        </div>
+                        <div class="form-group" id="startTimeGroup">
+                            <label class="form-label" for="eventStartTime">Start Time</label>
+                            <input type="time" id="eventStartTime" class="form-input" onchange="updateEndTime()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="eventEndDate">End Date *</label>
+                            <input type="date" id="eventEndDate" class="form-input" required>
+                        </div>
+                        <div class="form-group" id="endTimeGroup">
+                            <label class="form-label" for="eventEndTime">End Time</label>
+                            <input type="time" id="eventEndTime" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="eventDescription">Description</label>
+                        <textarea id="eventDescription" class="form-textarea modal-textarea-description" placeholder="Enter event description"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="eventLocation">Location</label>
+                        <input type="text" id="eventLocation" class="form-input" placeholder="Enter event location">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddEventModal()">Cancel</button>
+                <button type="submit" form="addEventForm" class="btn btn-primary">Create Event</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="calendar.js?v=3.5.1"></script>
+</body>
+</html>
