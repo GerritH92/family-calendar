@@ -696,6 +696,17 @@ window.deleteSelectedEvent = async function() {
     }
 }
 
+function editSelectedEvent() {
+    if (!selectedEvent) {
+        console.error('No event selected to edit.');
+        return;
+    }
+
+    // Example: Open an edit modal or redirect to an edit page
+    console.log('Editing event:', selectedEvent);
+    // Add your logic here to handle editing the event
+}
+
 async function init() {
     currentWeekStart = getMonday(new Date());
     
@@ -879,13 +890,6 @@ window.submitEvent = async function(event) {
             // For all day, end date is usually inclusive in UI but exclusive in some APIs.
             // Google Calendar API for all-day is YYYY-MM-DD.
             // Our backend tries google.create_event with start_date_time first.
-            // If we want true all-day, we might need to update the backend to accept start_date/end_date.
-            // For now, let's send 00:00 to 23:59 which usually works as "all day" visually in many views,
-            // or let's rely on the backend's fallback logic.
-            
-            // Actually, looking at the backend code:
-            // It takes start_date_time and end_date_time.
-            // Then it tries google.create_event with those.
             // If that fails, it tries calendar.create_event.
             
             // If we want a TRUE all-day event, we should probably update the backend to accept start_date/end_date
