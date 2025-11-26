@@ -873,7 +873,7 @@ window.closeAddEventModal = function() {
 
 window.submitEvent = async function(event) {
     event.preventDefault();
-    
+
     const calendarEntity = document.getElementById('eventCalendar').value;
     const title = document.getElementById('eventTitle').value;
     const startDate = document.getElementById('eventStartDate').value;
@@ -883,113 +883,77 @@ window.submitEvent = async function(event) {
     const description = document.getElementById('eventDescription').value;
     const location = document.getElementById('eventLocation').value;
     const isAllDay = document.getElementById('eventAllDay').checked;
-    
+
     try {
-        debug('Creating event in: ' + calendarEntity);
-        
+        debug(selectedEvent ? 'Updating event in: ' + calendarEntity : 'Creating event in: ' + calendarEntity);
+
         // Get authentication token
         const token = await getAuthToken();
         const headers = {
             'Content-Type': 'application/json',
         };
-        
+
         if (token && token !== 'USE_SESSION') {
             headers['Authorization'] = `Bearer ${token}`;
             debug('Using Bearer token for authentication');
         } else {
             debug('Using session credentials');
         }
-        
+
         // Build service data - Google Calendar format via Home Assistant
         const serviceData = {
             entity_id: calendarEntity,
             summary: title
         };
-        
+
         // Format start/end for Google Calendar
         if (!isAllDay && startTime && endTime) {
-            // Timed event - use start_date_time and end_date_time
-            serviceData.start_date_time = `${startDate} ${startTime}:00`;
-            serviceData.end_date_time = `${endDate} ${endTime}:00`;
+            serviceData.start = {
+                dateTime: `${startDate}T${startTime}:00`,
+            };
+            serviceData.end = {
+                dateTime: `${endDate}T${endTime}:00`,
+            };
         } else {
-            // All-day event - use start_date and end_date
-            serviceData.start_date = startDate;
-            serviceData.end_date = endDate;
-        }
-        
-        if (description) serviceData.description = description;
-        if (location) serviceData.location = location;
-        
-        // Use family_calendar add_event API endpoint
-        const payload = {
-            calendar_entity: calendarEntity,
-            summary: title,
-            ...(description && { description }),
-            ...(location && { location })
-        };
-
-        if (!isAllDay && startTime && endTime) {
-            payload.start_date_time = `${startDate} ${startTime}:00`;
-            payload.end_date_time = `${endDate} ${endTime}:00`;
-        } else {
-            // For all-day events, the API expects start_date_time/end_date_time 
-            // but we can pass just the date part if the backend supports it, 
-            // OR we pass 00:00:00 / 23:59:59 if we want to force it via datetime.
-            // However, the backend logic (FamilyCalendarAddEventView) currently expects start_date_time/end_date_time strings.
-            // Let's send date + default times to satisfy the current backend validation, 
-            // but ideally the backend should handle date-only.
-            // Wait, the backend tries to parse it.
-            // Let's stick to the current working logic:
-            payload.start_date_time = `${startDate} 00:00:00`;
-            // For all day, end date is usually inclusive in UI but exclusive in some APIs.
-            // Google Calendar API for all-day is YYYY-MM-DD.
-            // Our backend tries google.create_event with start_date_time first.
-            // If that fails, it tries calendar.create_event.
-            
-            // If we want a TRUE all-day event, we should probably update the backend to accept start_date/end_date
-            // OR we send the time as 00:00:00 and 23:59:59?
-            // Let's stick to what was working before for "all day" (which was just omitting time).
-            // But wait, the previous code did:
-            // start_date_time: `${startDate} ${startTime || '00:00'}:00`,
-            // end_date_time: `${endDate} ${endTime || '23:59'}:00`,
-            
-            // So if isAllDay is true, we just do that:
-            payload.start_date_time = `${startDate} 00:00:00`;
-            // Note: Some calendars treat 00:00 to 00:00 next day as all day.
-            // Let's use the previous logic which seemed to work for the user.
-            payload.end_date_time = `${endDate} 23:59:59`; 
+            serviceData.start = {
+                date: startDate,
+            };
+            serviceData.end = {
+                date: endDate,
+            };
         }
 
-        const response = await fetch(API_ENDPOINTS.ADD_EVENT, {
-            method: 'POST',
-            headers: headers,
-            credentials: 'include',
-            body: JSON.stringify(payload)
-        });
-        
-        debug('Called family_calendar add_event API with calendar: ' + calendarEntity);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            debug('API error: ' + response.status + ' - ' + errorText);
-            alert('Failed to create event: ' + response.status + '\n' + errorText);
-            return;
+        if (description) {
+            serviceData.description = description;
         }
-        
-        const result = await response.json();
-        debug('Event created successfully: ' + JSON.stringify(result));
-        alert('Event created successfully!');
-        
-        window.closeAddEventModal();
-        
-        // Refresh calendar after a short delay
-        setTimeout(async () => {
-            await renderWeek();
-        }, 1500);
-        
+
+        if (location) {
+            serviceData.location = location;
+        }
+
+        if (selectedEvent) {
+            // Update existing event
+            serviceData.event_id = selectedEvent.uid;
+            await fetch(`${API_ENDPOINTS.EVENTS}/update`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(serviceData),
+            });
+            debug('Event updated successfully');
+        } else {
+            // Create new event
+            await fetch(API_ENDPOINTS.ADD_EVENT, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(serviceData),
+            });
+            debug('Event created successfully');
+        }
+
+        closeAddEventModal();
+        renderWeek();
     } catch (error) {
-        debug('Error creating event: ' + error.message);
-        alert('Error creating event: ' + error.message);
+        console.error('Error submitting event:', error);
     }
 }
 
