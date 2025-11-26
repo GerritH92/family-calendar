@@ -23,15 +23,20 @@ async def _async_register_static_path(hass: HomeAssistant):
     
     _LOGGER.info(f"Family Calendar: Registering static path: {path}")
     
-    # Use executor to avoid blocking the event loop with os.listdir
-    if os.path.exists(path):
-        try:
-            contents = await hass.async_add_executor_job(os.listdir, path)
+    # Use executor to avoid blocking the event loop with file I/O
+    def check_path_contents(p):
+        if os.path.exists(p):
+            return os.listdir(p)
+        return None
+
+    try:
+        contents = await hass.async_add_executor_job(check_path_contents, path)
+        if contents is not None:
             _LOGGER.info(f"Family Calendar: Path exists. Contents: {contents}")
-        except Exception as e:
-            _LOGGER.error(f"Family Calendar: Error listing directory: {e}")
-    else:
-        _LOGGER.error(f"Family Calendar: Path does not exist at {path}")
+        else:
+            _LOGGER.error(f"Family Calendar: Path does not exist at {path}")
+    except Exception as e:
+        _LOGGER.error(f"Family Calendar: Error checking path: {e}")
         
     # Check if http component is loaded
     if "http" not in hass.config.components:
@@ -511,28 +516,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _async_register_static_path(hass)
     
     # Only register if not already registered
-    if panel_url not in hass.data.get("frontend_panels", {}):
-        # Use a fixed version for cache busting to avoid confusion
-        # In production, this should match manifest version
-        version = "1.0.0"
-        
-        # Remove old panel if it exists
-        try:
-            frontend.async_remove_panel(hass, panel_url)
-        except:
-            pass
-        
-        frontend.async_register_built_in_panel(
-            hass,
-            component_name="iframe",
-            sidebar_title=panel_name,
-            sidebar_icon="mdi:calendar-account",
-            frontend_url_path=panel_url,
-            config={
-                "url": f"/family_calendar_static/calendar.html?v={version}"
-            },
-            require_admin=False,
-        )
+    # Note: We check if it's in frontend_panels to avoid duplicate registration warnings
+    # but we also want to ensure it's registered if we just reloaded the integration
+    
+    # Use a fixed version for cache busting to avoid confusion
+    # In production, this should match manifest version
+    version = "1.0.0"
+    
+    # Always try to remove it first to ensure we have the latest config
+    # This might cause the "Removing unknown panel" warning if it didn't exist, which is fine
+    try:
+        frontend.async_remove_panel(hass, panel_url)
+    except Exception:
+        pass
+    
+    frontend.async_register_built_in_panel(
+        hass,
+        component_name="iframe",
+        sidebar_title=panel_name,
+        sidebar_icon="mdi:calendar-account",
+        frontend_url_path=panel_url,
+        config={
+            "url": f"/family_calendar_static/calendar.html?v={version}"
+        },
+        require_admin=False,
+    )
     
     return True
 
