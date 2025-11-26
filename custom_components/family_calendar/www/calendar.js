@@ -714,6 +714,31 @@ function editSelectedEvent() {
     }
 }
 
+function closeEditEventModal() {
+    const editModal = document.getElementById('edit-event-modal');
+    if (editModal) {
+        editModal.style.display = 'none';
+    }
+}
+
+function saveEditedEvent() {
+    const title = document.getElementById('edit-event-title').value;
+    const time = document.getElementById('edit-event-time').value;
+    const description = document.getElementById('edit-event-description').value;
+
+    if (selectedEvent) {
+        selectedEvent.summary = title;
+        selectedEvent.start.dateTime = time;
+        selectedEvent.description = description;
+
+        console.log('Updated event:', selectedEvent);
+        closeEditEventModal();
+        // Add logic to persist the changes to the backend or update the UI
+    } else {
+        console.error('No event selected to save.');
+    }
+}
+
 async function init() {
     currentWeekStart = getMonday(new Date());
     
