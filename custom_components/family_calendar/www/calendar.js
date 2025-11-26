@@ -702,15 +702,37 @@ function editSelectedEvent() {
         return;
     }
 
-    // Example: Open an edit modal or redirect to an edit page
-    const editModal = document.getElementById('edit-event-modal');
-    if (editModal) {
-        document.getElementById('edit-event-title').value = selectedEvent.summary || '';
-        document.getElementById('edit-event-time').value = selectedEvent.start.dateTime || '';
-        document.getElementById('edit-event-description').value = selectedEvent.description || '';
-        editModal.style.display = 'block';
+    // Reuse the Add Event modal
+    const addEventModal = document.getElementById('add-event-modal');
+    if (addEventModal) {
+        document.getElementById('eventTitle').value = selectedEvent.summary || '';
+        document.getElementById('eventCalendar').value = selectedEvent.calendar || '';
+
+        const startDate = selectedEvent.start.dateTime ? new Date(selectedEvent.start.dateTime) : new Date(selectedEvent.start.date);
+        document.getElementById('eventStartDate').value = startDate.toISOString().split('T')[0];
+        if (selectedEvent.start.dateTime) {
+            document.getElementById('eventStartTime').value = startDate.toTimeString().slice(0, 5);
+        }
+
+        const allDayCheckbox = document.getElementById('eventAllDay');
+        if (selectedEvent.start.date) {
+            allDayCheckbox.checked = true;
+            toggleTimeInputs();
+        } else {
+            allDayCheckbox.checked = false;
+        }
+
+        document.getElementById('eventStartTime').value = startDate.toTimeString().slice(0, 5);
+
+        const endDate = selectedEvent.end.dateTime ? new Date(selectedEvent.end.dateTime) : null;
+        if (endDate) {
+            document.getElementById('eventEndDate').value = endDate.toISOString().split('T')[0];
+            document.getElementById('eventEndTime').value = endDate.toTimeString().slice(0, 5);
+        }
+
+        addEventModal.style.display = 'block';
     } else {
-        console.warn('Edit modal not found.');
+        console.warn('Add Event modal not found.');
     }
 }
 
