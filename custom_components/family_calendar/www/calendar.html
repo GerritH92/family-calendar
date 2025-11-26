@@ -138,5 +138,30 @@
     </div>
     
     <script src="calendar.js?v=3.5.1"></script>
+    <script>
+        // Sync dark mode from Home Assistant
+        function syncDarkMode() {
+            const parentHtml = window.parent.document.documentElement;
+            const body = document.body;
+
+            function applyDarkMode() {
+                if (parentHtml.classList.contains('hass-theme-dark') || parentHtml.getAttribute('hass-theme-dark') === 'true') {
+                    body.classList.add('hass-theme-dark');
+                } else {
+                    body.classList.remove('hass-theme-dark');
+                }
+            }
+
+            // Initial check
+            applyDarkMode();
+
+            // Observe changes to the parent HTML class or attributes
+            const observer = new MutationObserver(applyDarkMode);
+            observer.observe(parentHtml, { attributes: true, attributeFilter: ['class', 'hass-theme-dark'] });
+        }
+
+        // Run the sync function
+        syncDarkMode();
+    </script>
 </body>
 </html>
