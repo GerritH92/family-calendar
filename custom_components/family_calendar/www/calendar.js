@@ -703,8 +703,15 @@ function editSelectedEvent() {
     }
 
     // Example: Open an edit modal or redirect to an edit page
-    console.log('Editing event:', selectedEvent);
-    // Add your logic here to handle editing the event
+    const editModal = document.getElementById('edit-event-modal');
+    if (editModal) {
+        document.getElementById('edit-event-title').value = selectedEvent.summary || '';
+        document.getElementById('edit-event-time').value = selectedEvent.start.dateTime || '';
+        document.getElementById('edit-event-description').value = selectedEvent.description || '';
+        editModal.style.display = 'block';
+    } else {
+        console.warn('Edit modal not found.');
+    }
 }
 
 async function init() {
