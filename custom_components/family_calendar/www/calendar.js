@@ -355,8 +355,11 @@ async function fetchProxyEvents(calendarEntity, startDate, endDate) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Add cache-busting parameter to ensure fresh data
+    const cacheBuster = `cb=${Date.now()}`;
+    const url = `${API_ENDPOINTS.EVENTS}?calendar=${encodeURIComponent(calendarEntity)}&start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}&${cacheBuster}`;
     const response = await fetch(
-        `${API_ENDPOINTS.EVENTS}?calendar=${calendarEntity}&start=${startDate}&end=${endDate}`,
+        url,
         { 
             headers,
             credentials: 'include'
@@ -946,8 +949,8 @@ if (document.readyState === 'loading') {
     init();
 }
 
-// Auto-refresh every 3 minutes (180000 ms)
+// Auto-refresh every 1 minute (60000 ms)
 setInterval(() => {
     debug('Auto-refresh: fetching latest config and events');
     init();
-}, 180000);
+}, 60000);

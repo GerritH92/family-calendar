@@ -2,7 +2,7 @@
 
 A beautiful, responsive weekly calendar view for Home Assistant that aggregates multiple calendars, shows weather forecasts, and allows adding and deleting events directly from the dashboard.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-0.0.1-blue)
 ![HACS](https://img.shields.io/badge/HACS-Custom-orange)
 
 ## Features
