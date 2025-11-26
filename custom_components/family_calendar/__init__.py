@@ -7,39 +7,38 @@ from homeassistant.core import HomeAssistant
 from homeassistant.components import frontend
 from homeassistant.components.calendar import DOMAIN as CALENDAR_DOMAIN
 from homeassistant.components.http import HomeAssistantView
+import os
 from aiohttp import web
 
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "family_calendar"
 
-
-class FamilyCalendarConfigView(HomeAssistantView):
-    """View to return family calendar configuration."""
-
-    url = "/api/family_calendar/config"
-    name = "api:family_calendar:config"
-    requires_auth = False
-
-    def __init__(self, hass: HomeAssistant):
-        """Initialize the view."""
-        self.hass = hass
-
-    async def get(self, request):
-        """Handle GET request."""
-        calendars = self.hass.data.get(DOMAIN, {}).get("calendars", [])
-        colors = self.hass.data.get(DOMAIN, {}).get("colors", {})
-        names = self.hass.data.get(DOMAIN, {}).get("names", {})
-        weather_entity = self.hass.data.get(DOMAIN, {}).get("weather_entity")
+async def _async_register_static_path(hass: HomeAssistant):
+    """Register the static path for frontend files."""
+    # Use realpath to resolve any symlinks (common in HACS setups)
+    file_path = os.path.realpath(__file__)
+    dir_path = os.path.dirname(file_path)
+    path = os.path.join(dir_path, "www")
+    
+    _LOGGER.info(f"Family Calendar: Registering static path: {path}")
+    
+    if os.path.exists(path):
+        _LOGGER.info(f"Family Calendar: Path exists. Contents: {os.listdir(path)}")
+    else:
+        _LOGGER.error(f"Family Calendar: Path does not exist at {path}")
         
-        _LOGGER.debug(f"API called - returning {len(calendars)} calendars")
+    # Check if http component is loaded
+    if "http" not in hass.config.components:
+        _LOGGER.warning("Family Calendar: HTTP component not found in hass.config.components")
         
-        return web.json_response({
-            "calendars": calendars,
-            "colors": colors,
-            "names": names,
-            "weather_entity": weather_entity
-        })
+    hass.http.async_register_static_paths([("/family_calendar_static", path)])
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up the integration."""
+    hass.data.setdefault(DOMAIN, {})
+    await _async_register_static_path(hass)
+    return True
 
 
 class FamilyCalendarWeatherView(HomeAssistantView):
@@ -421,10 +420,32 @@ class FamilyCalendarDeleteEventView(HomeAssistantView):
             _LOGGER.error(f"Failed to delete event: {error}", exc_info=True)
             return web.json_response({"error": str(error)}, status=500)
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the integration."""
-    hass.data.setdefault(DOMAIN, {})
-    return True
+class FamilyCalendarConfigView(HomeAssistantView):
+    """View to return family calendar configuration."""
+
+    url = "/api/family_calendar/config"
+    name = "api:family_calendar:config"
+    requires_auth = False
+
+    def __init__(self, hass: HomeAssistant):
+        """Initialize the view."""
+        self.hass = hass
+
+    async def get(self, request):
+        """Handle GET request."""
+        calendars = self.hass.data.get(DOMAIN, {}).get("calendars", [])
+        colors = self.hass.data.get(DOMAIN, {}).get("colors", {})
+        names = self.hass.data.get(DOMAIN, {}).get("names", {})
+        weather_entity = self.hass.data.get(DOMAIN, {}).get("weather_entity")
+        
+        _LOGGER.debug(f"API called - returning {len(calendars)} calendars")
+        
+        return web.json_response({
+            "calendars": calendars,
+            "colors": colors,
+            "names": names,
+            "weather_entity": weather_entity
+        })
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up from config entry."""
@@ -477,21 +498,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data[DOMAIN][entry.entry_id] = entry.data
     
-    # Register static path for frontend files
-    # This allows serving files directly from the component directory
-    import os
-    path = os.path.join(os.path.dirname(__file__), "www")
-    hass.http.async_register_static_paths([("/family_calendar_static", path)])
-    
     # Register the sidebar panel with a fixed URL to prevent duplicates
     panel_name = "Family Calendar"
     panel_url = "family_calendar"  # Fixed URL instead of unique per entry
     
+    # Ensure static path is registered (idempotent)
+    await _async_register_static_path(hass)
+    
     # Only register if not already registered
     if panel_url not in hass.data.get("frontend_panels", {}):
-        # Add timestamp to force cache refresh
-        import time
-        cache_bust = int(time.time())
+        # Use a fixed version for cache busting to avoid confusion
+        # In production, this should match manifest version
+        version = "1.0.0"
         
         # Remove old panel if it exists
         try:
@@ -506,7 +524,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             sidebar_icon="mdi:calendar-account",
             frontend_url_path=panel_url,
             config={
-                "url": f"/family_calendar_static/calendar.html?v={cache_bust}"
+                "url": f"/family_calendar_static/calendar.html?v={version}"
             },
             require_admin=False,
         )
