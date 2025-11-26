@@ -23,8 +23,13 @@ async def _async_register_static_path(hass: HomeAssistant):
     
     _LOGGER.info(f"Family Calendar: Registering static path: {path}")
     
+    # Use executor to avoid blocking the event loop with os.listdir
     if os.path.exists(path):
-        _LOGGER.info(f"Family Calendar: Path exists. Contents: {os.listdir(path)}")
+        try:
+            contents = await hass.async_add_executor_job(os.listdir, path)
+            _LOGGER.info(f"Family Calendar: Path exists. Contents: {contents}")
+        except Exception as e:
+            _LOGGER.error(f"Family Calendar: Error listing directory: {e}")
     else:
         _LOGGER.error(f"Family Calendar: Path does not exist at {path}")
         
@@ -32,7 +37,7 @@ async def _async_register_static_path(hass: HomeAssistant):
     if "http" not in hass.config.components:
         _LOGGER.warning("Family Calendar: HTTP component not found in hass.config.components")
         
-    hass.http.async_register_static_paths([("/family_calendar_static", path)])
+    await hass.http.async_register_static_paths([("/family_calendar_static", path)])
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the integration."""
