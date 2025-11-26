@@ -10,9 +10,11 @@
                 if (isDark) {
                     document.documentElement.setAttribute('hass-theme-dark', '');
                     document.documentElement.classList.add('hass-theme-dark');
+                    document.body.classList.add('hass-theme-dark');
                 } else {
                     document.documentElement.removeAttribute('hass-theme-dark');
                     document.documentElement.classList.remove('hass-theme-dark');
+                    document.body.classList.remove('hass-theme-dark');
                 }
             } catch (e) {}
         }
@@ -31,19 +33,21 @@
     <title>Family Calendar v3.5</title>
 </head>
 <body>
-    <div class="header-container">
-        <div class="calendar-header">
-            <button class="nav-button" onclick="previousWeek()">‹</button>
-            <div class="week-title" id="week-title">Week View</div>
-            <button class="nav-button" onclick="nextWeek()">›</button>
-        </div>
-        <div class="live-clock">
-            <div class="live-time" id="live-time">00:00</div>
-            <div class="live-date" id="live-date">Loading...</div>
-        </div>
-        <div class="header-actions">
-            <button class="add-event-button" onclick="openAddEventModal()">+ Add Event</button>
-        </div>
+        function syncHassThemeDark() {
+            try {
+                const parentHtml = window.parent.document.documentElement;
+                const isDark = parentHtml.hasAttribute('hass-theme-dark');
+                if (isDark) {
+                    document.documentElement.setAttribute('hass-theme-dark', '');
+                    document.documentElement.classList.add('hass-theme-dark');
+                    document.body.classList.add('hass-theme-dark');
+                } else {
+                    document.documentElement.removeAttribute('hass-theme-dark');
+                    document.documentElement.classList.remove('hass-theme-dark');
+                    document.body.classList.remove('hass-theme-dark');
+                }
+            } catch (e) {}
+        }
     </div>
     
     <div class="calendar-pills">

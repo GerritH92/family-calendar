@@ -35,7 +35,7 @@
 }
 
 
- :root[hass-theme-dark], .hass-theme-dark {
+ :root[hass-theme-dark], .hass-theme-dark, body.hass-theme-dark {
     --primary: #90caf9;
     --primary-dark: #1565c0;
     --primary-light: #1e293b;
