@@ -471,7 +471,7 @@ body {
     font-weight: 500;
     margin: 0;
     flex: 1;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .modal-close {
@@ -504,7 +504,7 @@ body {
 
 .modal-label {
     font-weight: 600;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 0.85em;
     text-transform: uppercase;
     margin-bottom: 5px;
@@ -512,12 +512,12 @@ body {
 
 .modal-label-inline {
     font-weight: 500;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .modal-value {
     font-size: 1em;
-    color: #333;
+    color: var(--text-primary);
     line-height: 1.5;
 }
 
@@ -572,7 +572,7 @@ body {
 .form-label {
     display: block;
     font-weight: 600;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 0.9em;
     margin-bottom: 8px;
 }
@@ -773,7 +773,7 @@ input:checked + .slider:before {
 
 .modal-label-inline {
     font-weight: 500;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .modal-textarea-description {

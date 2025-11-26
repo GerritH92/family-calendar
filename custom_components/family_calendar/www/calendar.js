@@ -243,7 +243,7 @@ function renderFilters() {
         
         pill.style.borderColor = color;
         pill.style.color = color;
-        pill.style.background = getColorTint(color);
+        pill.style.background = getColorTint(color) || 'var(--surface)';
         
         pill.innerHTML = `
             <span class="pill-dot" style="background:${color};"></span>
@@ -549,7 +549,7 @@ async function renderWeek() {
             dayEvents.forEach(event => {
                 const eventDiv = document.createElement('div');
                 eventDiv.className = 'event';
-                eventDiv.style.background = event.color + '20';
+                eventDiv.style.background = getColorTint(event.color, 0.18) || 'var(--primary-light)';
                 eventDiv.style.borderLeftColor = event.color;
                 eventDiv.onclick = () => showEventDetails(event);
                 
@@ -607,7 +607,7 @@ function showEventDetails(event) {
     const calendarBadge = document.getElementById('modal-event-calendar');
     const calendarName = names[event.calendar] || event.calendar.replace('calendar.', '').replace(/_/g, ' ');
     calendarBadge.textContent = calendarName;
-    calendarBadge.style.background = event.color + '40';
+    calendarBadge.style.background = getColorTint(event.color, 0.25) || 'var(--primary-light)';
     calendarBadge.style.color = event.color;
     calendarBadge.style.borderColor = event.color;
     
