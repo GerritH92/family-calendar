@@ -143,7 +143,7 @@ body {
 
 .calendar-pill.inactive {
     opacity: 0.35;
-    background: rgba(0,0,0,0.05);
+    background: var(--divider);
 }
 
 .calendar-pill .pill-dot {
@@ -279,7 +279,7 @@ body {
 }
 
 .day-column.weekend {
-    background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+    background: linear-gradient(135deg, var(--surface) 0%, var(--background) 100%);
 }
 
 .day-header {
@@ -437,13 +437,13 @@ body {
 }
 
 .modal {
-    background: white;
+    background: var(--surface);
     border-radius: 12px;
     max-width: 600px;
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    box-shadow: var(--shadow-lg);
     animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -491,7 +491,7 @@ body {
 }
 
 .modal-close:hover {
-    background: #f0f0f0;
+    background: var(--divider);
 }
 
 .modal-body {
@@ -645,12 +645,12 @@ body {
 }
 
 .btn-secondary {
-    background: #f5f5f5;
-    color: #333;
+    background: var(--surface);
+    color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-    background: #e0e0e0;
+    background: var(--divider);
 }
 
 .btn-danger {
