@@ -9,8 +9,10 @@
                 const isDark = parentHtml.hasAttribute('hass-theme-dark');
                 if (isDark) {
                     document.documentElement.setAttribute('hass-theme-dark', '');
+                    document.documentElement.classList.add('hass-theme-dark');
                 } else {
                     document.documentElement.removeAttribute('hass-theme-dark');
+                    document.documentElement.classList.remove('hass-theme-dark');
                 }
             } catch (e) {}
         }
