@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components import frontend
 from homeassistant.components.calendar import DOMAIN as CALENDAR_DOMAIN
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 import os
 from aiohttp import web
 
@@ -42,7 +42,9 @@ async def _async_register_static_path(hass: HomeAssistant):
     if "http" not in hass.config.components:
         _LOGGER.warning("Family Calendar: HTTP component not found in hass.config.components")
         
-    await hass.http.async_register_static_paths([("/family_calendar_static", path)])
+    await hass.http.async_register_static_paths([
+        StaticPathConfig("/family_calendar_static", path, False)
+    ])
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the integration."""
