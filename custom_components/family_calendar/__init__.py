@@ -42,9 +42,14 @@ async def _async_register_static_path(hass: HomeAssistant):
     if "http" not in hass.config.components:
         _LOGGER.warning("Family Calendar: HTTP component not found in hass.config.components")
         
-    await hass.http.async_register_static_paths([
-        StaticPathConfig("/family_calendar_static", path, False)
-    ])
+    try:
+        await hass.http.async_register_static_paths([
+            StaticPathConfig("/family_calendar_static", path, False)
+        ])
+    except TypeError:
+        # Fallback for older HA versions that expect a tuple
+        _LOGGER.warning("Family Calendar: Falling back to tuple for static path registration")
+        await hass.http.async_register_static_paths([("/family_calendar_static", path)])
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the integration."""
