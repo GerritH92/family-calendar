@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
+        <script>
+        // Sync Home Assistant dark mode to this iframe
+        function syncHassThemeDark() {
+            try {
+                const parentHtml = window.parent.document.documentElement;
+                const isDark = parentHtml.hasAttribute('hass-theme-dark');
+                if (isDark) {
+                    document.documentElement.setAttribute('hass-theme-dark', '');
+                } else {
+                    document.documentElement.removeAttribute('hass-theme-dark');
+                }
+            } catch (e) {}
+        }
+        syncHassThemeDark();
+        window.addEventListener('focus', syncHassThemeDark);
+        window.addEventListener('pageshow', syncHassThemeDark);
+        setInterval(syncHassThemeDark, 2000); // fallback for theme changes
+        </script>
     <meta charset="utf-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
