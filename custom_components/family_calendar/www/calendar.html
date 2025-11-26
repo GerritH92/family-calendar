@@ -1,28 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-        <script>
-        // Sync Home Assistant dark mode to this iframe
-        function syncHassThemeDark() {
-            try {
-                const parentHtml = window.parent.document.documentElement;
-                const isDark = parentHtml.hasAttribute('hass-theme-dark');
-                if (isDark) {
-                    document.documentElement.setAttribute('hass-theme-dark', '');
-                    document.documentElement.classList.add('hass-theme-dark');
-                    document.body.classList.add('hass-theme-dark');
-                } else {
-                    document.documentElement.removeAttribute('hass-theme-dark');
-                    document.documentElement.classList.remove('hass-theme-dark');
-                    document.body.classList.remove('hass-theme-dark');
-                }
-            } catch (e) {}
-        }
-        syncHassThemeDark();
-        window.addEventListener('focus', syncHassThemeDark);
-        window.addEventListener('pageshow', syncHassThemeDark);
-        setInterval(syncHassThemeDark, 2000); // fallback for theme changes
-        </script>
     <meta charset="utf-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -33,21 +11,19 @@
     <title>Family Calendar v3.5</title>
 </head>
 <body>
-        function syncHassThemeDark() {
-            try {
-                const parentHtml = window.parent.document.documentElement;
-                const isDark = parentHtml.hasAttribute('hass-theme-dark');
-                if (isDark) {
-                    document.documentElement.setAttribute('hass-theme-dark', '');
-                    document.documentElement.classList.add('hass-theme-dark');
-                    document.body.classList.add('hass-theme-dark');
-                } else {
-                    document.documentElement.removeAttribute('hass-theme-dark');
-                    document.documentElement.classList.remove('hass-theme-dark');
-                    document.body.classList.remove('hass-theme-dark');
-                }
-            } catch (e) {}
-        }
+    <div class="header-container">
+        <div class="calendar-header">
+            <button class="nav-button" onclick="previousWeek()">‹</button>
+            <div class="week-title" id="week-title">Week View</div>
+            <button class="nav-button" onclick="nextWeek()">›</button>
+        </div>
+        <div class="live-clock">
+            <div class="live-time" id="live-time">00:00</div>
+            <div class="live-date" id="live-date">Loading...</div>
+        </div>
+        <div class="header-actions">
+            <button class="add-event-button" onclick="openAddEventModal()">+ Add Event</button>
+        </div>
     </div>
     
     <div class="calendar-pills">
