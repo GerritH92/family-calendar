@@ -933,9 +933,21 @@ window.submitEvent = async function(event) {
 }
 
 // Wait for DOM to be ready before initializing
+// Always fetch events and config on page load/refresh
+window.addEventListener('pageshow', function(event) {
+    // 'pageshow' fires on normal load and on bfcache restore (back/forward cache)
+    init();
+});
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     // DOM is already ready
     init();
 }
+
+// Auto-refresh every 3 minutes (180000 ms)
+setInterval(() => {
+    debug('Auto-refresh: fetching latest config and events');
+    init();
+}, 180000);
