@@ -480,7 +480,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register static path for frontend files
     # This allows serving files directly from the component directory
     path = hass.config.path("custom_components", DOMAIN, "www")
-    hass.http.register_static_path("/family_calendar_static", path)
+    hass.http.async_register_static_paths("/family_calendar_static", path)
     
     # Register the sidebar panel with a fixed URL to prevent duplicates
     panel_name = "Family Calendar"
