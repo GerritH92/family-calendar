@@ -32,10 +32,17 @@ function detectLanguage() {
         console.log('Could not access parent window language');
     }
     
-    // Fallback to browser language
+    // Fallback to browser language, then to English
     const browserLang = navigator.language || navigator.userLanguage;
-    const langCode = browserLang.split('-')[0];
-    return translations[langCode] ? langCode : 'en';
+    if (browserLang) {
+        const langCode = browserLang.split('-')[0];
+        if (translations[langCode]) {
+            return langCode;
+        }
+    }
+    
+    // Final fallback to English
+    return 'en';
 }
 
 // Initialize language
