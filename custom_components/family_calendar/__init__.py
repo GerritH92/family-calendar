@@ -346,7 +346,9 @@ class FamilyCalendarUpdateEventView(HomeAssistantView):
             # Strategy: Delete the old event and create a new one
             # This is the most compatible approach across different calendar integrations
             
-            # Step 1: Try to delete the existing event
+            # Step 1: Try to delete the existing event using multiple methods
+            _LOGGER.info(f"Attempting to delete event {event_uid} from {calendar_entity}")
+            
             delete_payload = {
                 "entity_id": calendar_entity,
                 "event_id": event_uid,
@@ -354,9 +356,14 @@ class FamilyCalendarUpdateEventView(HomeAssistantView):
             }
             
             deletion_success = False
+            deletion_attempts = []
+            
+            # Try all available delete services
             for domain, service in (
                 ("google", "delete_event"),
+                ("google", "remove_event"),
                 ("calendar", "delete_event"),
+                ("calendar", "remove_event"),
             ):
                 if not self.hass.services.has_service(domain, service):
                     continue
@@ -368,14 +375,51 @@ class FamilyCalendarUpdateEventView(HomeAssistantView):
                         delete_payload,
                         blocking=True,
                     )
-                    _LOGGER.info(f"Deleted old event {event_uid} using {domain}.{service}")
+                    _LOGGER.info(f"Successfully deleted old event {event_uid} using {domain}.{service}")
                     deletion_success = True
                     break
                 except Exception as e:
-                    _LOGGER.debug(f"{domain}.{service} failed: {e}")
+                    msg = f"{domain}.{service} failed: {e}"
+                    _LOGGER.debug(msg)
+                    deletion_attempts.append(msg)
+            
+            # If services didn't work, try direct entity method
+            if not deletion_success:
+                from homeassistant.components.calendar import DOMAIN as CALENDAR_DOMAIN
+                
+                entity_component = self.hass.data.get("entity_components", {}).get(CALENDAR_DOMAIN)
+                calendar_entity_obj = None
+                if entity_component:
+                    calendar_entity_obj = entity_component.get_entity(calendar_entity)
+                
+                if calendar_entity_obj:
+                    _LOGGER.debug(f"Attempting direct entity delete for {calendar_entity}")
+                    for attr_name in ("async_delete_event", "async_remove_event", "delete_event", "remove_event"):
+                        handler = getattr(calendar_entity_obj, attr_name, None)
+                        if not handler:
+                            continue
+                        
+                        try:
+                            if attr_name.startswith("async_"):
+                                await handler(event_uid)
+                            else:
+                                await self.hass.async_add_executor_job(handler, event_uid)
+                            
+                            _LOGGER.info(f"Successfully deleted event {event_uid} using entity method {attr_name}")
+                            deletion_success = True
+                            break
+                        except Exception as e:
+                            msg = f"Entity method {attr_name} failed: {e}"
+                            _LOGGER.debug(msg)
+                            deletion_attempts.append(msg)
             
             if not deletion_success:
-                _LOGGER.warning(f"Could not delete old event {event_uid}, will try to create new one anyway")
+                _LOGGER.warning(f"Could not delete old event {event_uid}. Attempts: {deletion_attempts}")
+                # Continue anyway - maybe the event doesn't exist anymore
+            else:
+                # Wait a moment for deletion to propagate
+                import asyncio
+                await asyncio.sleep(0.5)
             
             # Step 2: Create the updated event
             google_service_data = {
