@@ -314,6 +314,116 @@ class FamilyCalendarAddEventView(HomeAssistantView):
             return web.json_response({"error": str(e)}, status=500)
 
 
+class FamilyCalendarUpdateEventView(HomeAssistantView):
+    """View to update events in calendars."""
+
+    url = "/api/family_calendar/update_event"
+    name = "api:family_calendar:update_event"
+    requires_auth = False
+
+    def __init__(self, hass: HomeAssistant):
+        """Initialize the view."""
+        self.hass = hass
+
+    async def post(self, request):
+        """Handle POST request to update event."""
+        try:
+            data = await request.json()
+            
+            calendar_entity = data.get("calendar_entity")
+            event_uid = data.get("event_uid")
+            summary = data.get("summary")
+            start_date_time = data.get("start_date_time")
+            end_date_time = data.get("end_date_time")
+            description = data.get("description", "")
+            location = data.get("location", "")
+            
+            _LOGGER.debug(f"Update event request for {calendar_entity}: {summary}")
+            
+            if not all([calendar_entity, event_uid, summary, start_date_time, end_date_time]):
+                return web.json_response({"error": "Missing required fields"}, status=400)
+            
+            # Build service data for Google Calendar update
+            google_service_data = {
+                "entity_id": calendar_entity,
+                "event_id": event_uid,
+                "summary": summary,
+                "start_date_time": start_date_time,
+                "end_date_time": end_date_time,
+            }
+            
+            if description:
+                google_service_data["description"] = description
+            if location:
+                google_service_data["location"] = location
+            
+            _LOGGER.debug(f"Calling google.update_event for {calendar_entity}")
+            _LOGGER.debug(f"Google service data: {google_service_data}")
+            
+            # Try google.update_event first (for Google Calendar)
+            try:
+                await self.hass.services.async_call(
+                    "google",
+                    "update_event",
+                    google_service_data,
+                    blocking=True
+                )
+                _LOGGER.info(f"Successfully updated event '{summary}' using google.update_event")
+                return web.json_response({"success": True})
+            except Exception as google_error:
+                _LOGGER.error(f"google.update_event failed: {type(google_error).__name__}: {google_error}")
+                
+                # Parse datetime for fallback
+                start_dt = datetime.strptime(start_date_time, "%Y-%m-%d %H:%M:%S")
+                end_dt = datetime.strptime(end_date_time, "%Y-%m-%d %H:%M:%S")
+                
+                # Build fallback service data for calendar.update_event
+                calendar_service_data = {
+                    "entity_id": calendar_entity,
+                    "event_id": event_uid,
+                    "summary": summary,
+                    "start_date_time": start_dt,
+                    "end_date_time": end_dt,
+                }
+                
+                if description:
+                    calendar_service_data["description"] = description
+                if location:
+                    calendar_service_data["location"] = location
+                
+                _LOGGER.debug(f"Trying fallback: calendar.update_event")
+                
+                # Fall back to calendar.update_event for other calendar types
+                try:
+                    await self.hass.services.async_call(
+                        "calendar",
+                        "update_event",
+                        calendar_service_data,
+                        blocking=True
+                    )
+                    _LOGGER.info(f"Successfully updated event '{summary}' using calendar.update_event")
+                    return web.json_response({"success": True})
+                except Exception as calendar_error:
+                    google_msg = str(google_error)
+                    calendar_msg = str(calendar_error)
+                    _LOGGER.error(f"calendar.update_event also failed: {calendar_msg}")
+                    
+                    permission_error = (
+                        "This calendar is read-only or missing write permissions. "
+                        "Select a calendar that supports event updates."
+                    )
+                    return web.json_response({
+                        "error": permission_error,
+                        "calendar": calendar_entity,
+                        "google_error": google_msg,
+                        "calendar_error": calendar_msg
+                    }, status=403)
+            
+        except Exception as e:
+            _LOGGER.error(f"Failed to update event: {e}", exc_info=True)
+            return web.json_response({"error": str(e)}, status=500)
+
+
 class FamilyCalendarDeleteEventView(HomeAssistantView):
     """View to delete events from calendars."""
 
@@ -473,6 +583,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         (FamilyCalendarConfigView, '_config_view_registered'),
         (FamilyCalendarEventsView, '_events_view_registered'),
         (FamilyCalendarAddEventView, '_add_event_view_registered'),
+        (FamilyCalendarUpdateEventView, '_update_event_view_registered'),
         (FamilyCalendarDeleteEventView, '_delete_event_view_registered'),
         (FamilyCalendarWeatherView, '_weather_view_registered'),
     ]

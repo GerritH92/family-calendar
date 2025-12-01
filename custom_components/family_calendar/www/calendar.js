@@ -6,12 +6,18 @@ let weatherEntity = null;
 let weatherForecast = [];
 let activeFilters = new Set();
 let selectedEvent = null;
+let editingEvent = null;
+let isInitialized = false;
+
+// Version identifier for debugging cache issues
+console.log('*** CALENDAR.JS VERSION: 2024-12-01-v2 ***');
 
 const API_ENDPOINTS = {
     CONFIG: '/api/family_calendar/config',
     WEATHER: '/api/family_calendar/weather',
     EVENTS: '/api/family_calendar/events',
     ADD_EVENT: '/api/family_calendar/add_event',
+    UPDATE_EVENT: '/api/family_calendar/update_event',
     DELETE_EVENT: '/api/family_calendar/delete_event'
 };
 
@@ -696,72 +702,107 @@ window.deleteSelectedEvent = async function() {
     }
 }
 
-function editSelectedEvent() {
+window.editSelectedEvent = function() {
     if (!selectedEvent) {
         console.error('No event selected to edit.');
         return;
     }
 
-    // Reuse the Add Event modal
-    const addEventModal = document.getElementById('add-event-modal');
-    if (addEventModal) {
-        document.getElementById('eventTitle').value = selectedEvent.summary || '';
-        document.getElementById('eventCalendar').value = selectedEvent.calendar || '';
+    console.log('=== EDIT EVENT BUTTON CLICKED ===');
+    console.log('Selected event:', selectedEvent);
+    
+    // Store the event being edited
+    editingEvent = selectedEvent;
+    
+    // Close the event details modal
+    closeEventModal();
+    
+    // Check what modals exist in the DOM
+    const allModals = document.querySelectorAll('.modal-overlay');
+    console.log('Total modals found in DOM:', allModals.length);
+    allModals.forEach((modal, index) => {
+        console.log(`Modal ${index + 1}:`, {
+            id: modal.id,
+            'data-modal-name': modal.getAttribute('data-modal-name'),
+            classes: modal.className,
+            visible: window.getComputedStyle(modal).display !== 'none'
+        });
+    });
+    
+    // Populate calendar dropdown first
+    const calendarSelect = document.getElementById('eventCalendar');
+    calendarSelect.innerHTML = '<option value="">Select a calendar</option>';
+    calendars.forEach(cal => {
+        const calName = names[cal] || cal.replace('calendar.', '').replace(/_/g, ' ');
+        const option = document.createElement('option');
+        option.value = cal;
+        option.textContent = calName;
+        calendarSelect.appendChild(option);
+    });
+    
+    // Fill in event details
+    document.getElementById('eventTitle').value = selectedEvent.summary || '';
+    document.getElementById('eventCalendar').value = selectedEvent.calendar || '';
+    document.getElementById('eventDescription').value = selectedEvent.description || '';
+    document.getElementById('eventLocation').value = selectedEvent.location || '';
 
-        const startDate = selectedEvent.start.dateTime ? new Date(selectedEvent.start.dateTime) : new Date(selectedEvent.start.date);
+    // Handle dates and times
+    const isAllDay = selectedEvent.start.date && !selectedEvent.start.dateTime;
+    const allDayCheckbox = document.getElementById('eventAllDay');
+    allDayCheckbox.checked = isAllDay;
+    
+    if (isAllDay) {
+        // All-day event
+        document.getElementById('eventStartDate').value = selectedEvent.start.date;
+        document.getElementById('eventEndDate').value = selectedEvent.end.date;
+    } else {
+        // Timed event
+        const startDate = new Date(selectedEvent.start.dateTime);
+        const endDate = new Date(selectedEvent.end.dateTime);
         document.getElementById('eventStartDate').value = startDate.toISOString().split('T')[0];
-        if (selectedEvent.start.dateTime) {
-            document.getElementById('eventStartTime').value = startDate.toTimeString().slice(0, 5);
-        }
-
-        const allDayCheckbox = document.getElementById('eventAllDay');
-        if (selectedEvent.start.date) {
-            allDayCheckbox.checked = true;
-            toggleTimeInputs();
-        } else {
-            allDayCheckbox.checked = false;
-        }
-
         document.getElementById('eventStartTime').value = startDate.toTimeString().slice(0, 5);
-
-        const endDate = selectedEvent.end.dateTime ? new Date(selectedEvent.end.dateTime) : null;
-        if (endDate) {
-            document.getElementById('eventEndDate').value = endDate.toISOString().split('T')[0];
-            document.getElementById('eventEndTime').value = endDate.toTimeString().slice(0, 5);
-        }
-
-        addEventModal.style.display = 'block';
-    } else {
-        console.warn('Add Event modal not found.');
+        document.getElementById('eventEndDate').value = endDate.toISOString().split('T')[0];
+        document.getElementById('eventEndTime').value = endDate.toTimeString().slice(0, 5);
     }
+    
+    // Call toggleTimeInputs to show/hide time fields
+    window.toggleTimeInputs();
+    
+    // Update modal title and button text
+    document.getElementById('add-event-modal-title').textContent = 'Edit Event';
+    document.getElementById('submit-event-button').textContent = 'Update Event';
+    
+    console.log('About to open modal with id: add-event-modal');
+    
+    // Show the modal
+    const modal = document.getElementById('add-event-modal');
+    console.log('Modal element:', {
+        id: modal.id,
+        'data-modal-name': modal.getAttribute('data-modal-name'),
+        'before classes': modal.className
+    });
+    
+    modal.classList.add('show');
+    
+    console.log('After adding .show class:', {
+        classes: modal.className,
+        display: window.getComputedStyle(modal).display
+    });
+    
+    console.log('=== END EDIT EVENT ===');
 }
 
-function closeEditEventModal() {
-    const editModal = document.getElementById('edit-event-modal');
-    if (editModal) {
-        editModal.style.display = 'none';
-    }
-}
 
-function saveEditedEvent() {
-    const title = document.getElementById('edit-event-title').value;
-    const time = document.getElementById('edit-event-time').value;
-    const description = document.getElementById('edit-event-description').value;
-
-    if (selectedEvent) {
-        selectedEvent.summary = title;
-        selectedEvent.start.dateTime = time;
-        selectedEvent.description = description;
-
-        console.log('Updated event:', selectedEvent);
-        closeEditEventModal();
-        // Add logic to persist the changes to the backend or update the UI
-    } else {
-        console.error('No event selected to save.');
-    }
-}
 
 async function init() {
+    if (isInitialized) {
+        // Just refresh data, don't re-initialize
+        await loadConfig();
+        await renderWeek();
+        return;
+    }
+    
+    isInitialized = true;
     currentWeekStart = getMonday(new Date());
     
     debug('Initializing Family Calendar v3.4');
@@ -778,6 +819,10 @@ async function init() {
 
 window.openAddEventModal = function() {
     debug('openAddEventModal called');
+    
+    // Clear editing state
+    editingEvent = null;
+    
     const modal = document.getElementById('add-event-modal');
     
     if (!modal) {
@@ -822,6 +867,10 @@ window.openAddEventModal = function() {
     // Reset All Day toggle
     document.getElementById('eventAllDay').checked = false;
     toggleTimeInputs();
+    
+    // Reset modal title and button text
+    document.getElementById('add-event-modal-title').textContent = 'Add New Event';
+    document.getElementById('submit-event-button').textContent = 'Create Event';
     
     debug('Adding show class to modal');
     modal.classList.add('show');
@@ -868,6 +917,10 @@ window.closeAddEventModal = function() {
     if (modal) {
         modal.classList.remove('show');
         document.getElementById('addEventForm').reset();
+        editingEvent = null;
+        // Reset modal title and button text
+        document.getElementById('add-event-modal-title').textContent = 'Add New Event';
+        document.getElementById('submit-event-button').textContent = 'Create Event';
     }
 }
 
@@ -885,7 +938,8 @@ window.submitEvent = async function(event) {
     const isAllDay = document.getElementById('eventAllDay').checked;
 
     try {
-        debug(selectedEvent ? 'Updating event in: ' + calendarEntity : 'Creating event in: ' + calendarEntity);
+        const isEditing = editingEvent !== null;
+        debug(isEditing ? 'Updating event in: ' + calendarEntity : 'Creating event in: ' + calendarEntity);
 
         // Get authentication token
         const token = await getAuthToken();
@@ -900,27 +954,19 @@ window.submitEvent = async function(event) {
             debug('Using session credentials');
         }
 
-        // Build service data - Google Calendar format via Home Assistant
+        // Build service data
         const serviceData = {
-            entity_id: calendarEntity,
+            calendar_entity: calendarEntity,
             summary: title
         };
 
-        // Format start/end for Google Calendar
+        // Format start/end times
         if (!isAllDay && startTime && endTime) {
-            serviceData.start = {
-                dateTime: `${startDate}T${startTime}:00`,
-            };
-            serviceData.end = {
-                dateTime: `${endDate}T${endTime}:00`,
-            };
+            serviceData.start_date_time = `${startDate} ${startTime}:00`;
+            serviceData.end_date_time = `${endDate} ${endTime}:00`;
         } else {
-            serviceData.start = {
-                date: startDate,
-            };
-            serviceData.end = {
-                date: endDate,
-            };
+            serviceData.start_date_time = `${startDate} 00:00:00`;
+            serviceData.end_date_time = `${endDate} 23:59:59`;
         }
 
         if (description) {
@@ -931,29 +977,44 @@ window.submitEvent = async function(event) {
             serviceData.location = location;
         }
 
-        if (selectedEvent) {
+        if (isEditing) {
             // Update existing event
-            serviceData.event_id = selectedEvent.uid;
-            await fetch(`${API_ENDPOINTS.EVENTS}/update`, {
+            serviceData.event_uid = editingEvent.uid;
+            const response = await fetch(API_ENDPOINTS.UPDATE_EVENT, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(serviceData),
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to update event');
+            }
+            
             debug('Event updated successfully');
+            alert('Event updated successfully!');
         } else {
             // Create new event
-            await fetch(API_ENDPOINTS.ADD_EVENT, {
+            const response = await fetch(API_ENDPOINTS.ADD_EVENT, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(serviceData),
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create event');
+            }
+            
             debug('Event created successfully');
+            alert('Event created successfully!');
         }
 
         closeAddEventModal();
-        renderWeek();
+        await renderWeek();
     } catch (error) {
         console.error('Error submitting event:', error);
+        alert('Error: ' + error.message);
     }
 }
 

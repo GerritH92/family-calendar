@@ -7,7 +7,7 @@
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=3.5.1">
+    <link rel="stylesheet" href="styles.css?v=3.5.2&t=1733097600">
     <title>Family Calendar v3.5</title>
 </head>
 <body>
@@ -35,13 +35,13 @@
     </div>
     
     <!-- Event Details Modal -->
-    <div class="modal-overlay" id="modal-overlay" onclick="closeEventModal()">
-        <div class="modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
+    <div class="modal-overlay" id="modal-overlay" data-modal-name="event-details" onclick="closeEventModal()">
+        <div class="modal" id="event-details-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="event-details-modal-header">
                 <h2 class="modal-title" id="modal-event-title">Event Details</h2>
                 <button class="modal-close" onclick="closeEventModal()">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" id="event-details-modal-body">
                 <div class="modal-field">
                     <div class="modal-label">Time</div>
                     <div class="modal-value" id="modal-event-time"></div>
@@ -61,22 +61,22 @@
                     <div class="modal-value" id="modal-event-description"></div>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="event-details-modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Close</button>
-                <button type="button" class="btn btn-danger" id="modal-delete-button" onclick="deleteSelectedEvent()">Delete Event</button>
                 <button type="button" class="btn btn-primary" id="modal-edit-button" onclick="editSelectedEvent()">Edit Event</button>
+                <button type="button" class="btn btn-danger" id="modal-delete-button" onclick="deleteSelectedEvent()">Delete Event</button>
             </div>
         </div>
     </div>
     
     <!-- Add Event Modal -->
-    <div class="modal-overlay" id="add-event-modal" onclick="closeAddEventModal()">
-        <div class="modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h2 class="modal-title">Add New Event</h2>
+    <div class="modal-overlay" id="add-event-modal" data-modal-name="add-edit-event" onclick="closeAddEventModal()">
+        <div class="modal" id="add-event-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="add-event-modal-header">
+                <h2 class="modal-title" id="add-event-modal-title">Add New Event</h2>
                 <button class="modal-close" onclick="closeAddEventModal()">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" id="add-event-modal-body">
                 <form id="addEventForm" onsubmit="submitEvent(event)">
                     <div class="form-group">
                         <label class="form-label" for="eventTitle">Event Title *</label>
@@ -131,43 +131,20 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="add-event-modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeAddEventModal()">Cancel</button>
-                <button type="submit" form="addEventForm" class="btn btn-primary">Create Event</button>
+                <button type="submit" form="addEventForm" class="btn btn-primary" id="submit-event-button">Create Event</button>
             </div>
         </div>
     </div>
     
-    <!-- Edit Event Modal -->
-    <div class="modal-overlay" id="edit-event-modal" style="display: none;" onclick="closeEditEventModal()">
-        <div class="modal" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h2 class="modal-title">Edit Event</h2>
-                <button class="modal-close" onclick="closeEditEventModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-field">
-                    <label for="edit-event-title">Title</label>
-                    <input type="text" id="edit-event-title" class="modal-input" />
-                </div>
-                <div class="modal-field">
-                    <label for="edit-event-time">Time</label>
-                    <input type="datetime-local" id="edit-event-time" class="modal-input" />
-                </div>
-                <div class="modal-field">
-                    <label for="edit-event-description">Description</label>
-                    <textarea id="edit-event-description" class="modal-input"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeEditEventModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveEditedEvent()">Save</button>
-            </div>
-        </div>
-    </div>
-    
-    <script src="calendar.js?v=3.5.1"></script>
+    <script src="calendar.js?v=3.5.2&t=1733097600"></script>
     <script>
+        // Verify the new function is loaded
+        console.log('=== CALENDAR.JS LOADED ===');
+        console.log('editSelectedEvent function exists:', typeof window.editSelectedEvent);
+        console.log('openAddEventModal function exists:', typeof window.openAddEventModal);
+        
         // Sync dark mode from Home Assistant
         function syncDarkMode() {
             const parentHtml = window.parent.document.documentElement;
