@@ -55,13 +55,13 @@ function showConfirm(message, title = 'Confirm', actionButtonText = 'Confirm', i
             actionButton.className = 'btn btn-primary';
         }
         
-        modal.style.display = 'flex';
+        modal.classList.add('show');
     });
 }
 
 function closeConfirmModal(result) {
     const modal = document.getElementById('confirm-modal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
     if (confirmResolve) {
         confirmResolve(result);
         confirmResolve = null;
