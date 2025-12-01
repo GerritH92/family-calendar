@@ -547,6 +547,36 @@ body {
     margin-top: 5px;
 }
 
+.refresh-button {
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 1.2em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: 100%;
+}
+
+.refresh-button:hover {
+    background: var(--hover);
+    transform: rotate(90deg);
+}
+
+.refresh-button:active {
+    transform: rotate(90deg) scale(0.95);
+}
+
+@media (min-width: 768px) {
+    .refresh-button {
+        padding: 12px 18px;
+        width: auto;
+    }
+}
+
 .add-event-button {
     background: var(--success);
     color: white;

@@ -1036,6 +1036,11 @@ window.submitEvent = async function(event) {
 // Always fetch events and config on page load/refresh
 window.addEventListener('pageshow', function(event) {
     // 'pageshow' fires on normal load and on bfcache restore (back/forward cache)
+    // If coming from cache, force a refresh
+    if (event.persisted) {
+        console.log('Page restored from cache - forcing refresh');
+        isInitialized = false;
+    }
     init();
 });
 
@@ -1045,6 +1050,13 @@ if (document.readyState === 'loading') {
     // DOM is already ready
     init();
 }
+
+// Manual refresh function
+window.refreshCalendar = async function() {
+    console.log('Manual refresh triggered');
+    await loadConfig();
+    await renderWeek();
+};
 
 // Auto-refresh every 1 minute (60000 ms)
 setInterval(() => {
