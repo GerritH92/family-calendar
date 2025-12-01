@@ -646,8 +646,11 @@ function showEventDetails(event) {
 
 function closeEventModal() {
     document.getElementById('modal-overlay').classList.remove('show');
-    selectedEvent = null;
-    selectedEventId = null;
+    // Don't clear selectedEvent immediately - wait a bit in case edit button was clicked
+    setTimeout(() => {
+        selectedEvent = null;
+        selectedEventId = null;
+    }, 100);
 }
 
 window.deleteSelectedEvent = async function() {
@@ -705,14 +708,25 @@ window.deleteSelectedEvent = async function() {
 window.editSelectedEvent = function() {
     if (!selectedEvent) {
         console.error('No event selected to edit.');
+        alert('Error: No event selected. Please try again.');
         return;
     }
 
     console.log('=== EDIT EVENT BUTTON CLICKED ===');
     console.log('Selected event:', selectedEvent);
     
-    // Store the event being edited
-    editingEvent = selectedEvent;
+    // Store a COPY of the event being edited BEFORE closing the modal
+    editingEvent = {
+        summary: selectedEvent.summary,
+        calendar: selectedEvent.calendar,
+        description: selectedEvent.description,
+        location: selectedEvent.location,
+        start: {...selectedEvent.start},
+        end: {...selectedEvent.end},
+        uid: selectedEvent.uid
+    };
+    
+    console.log('Stored editingEvent copy:', editingEvent);
     
     // Close the event details modal
     closeEventModal();
@@ -741,24 +755,24 @@ window.editSelectedEvent = function() {
     });
     
     // Fill in event details
-    document.getElementById('eventTitle').value = selectedEvent.summary || '';
-    document.getElementById('eventCalendar').value = selectedEvent.calendar || '';
-    document.getElementById('eventDescription').value = selectedEvent.description || '';
-    document.getElementById('eventLocation').value = selectedEvent.location || '';
+    document.getElementById('eventTitle').value = editingEvent.summary || '';
+    document.getElementById('eventCalendar').value = editingEvent.calendar || '';
+    document.getElementById('eventDescription').value = editingEvent.description || '';
+    document.getElementById('eventLocation').value = editingEvent.location || '';
 
     // Handle dates and times
-    const isAllDay = selectedEvent.start.date && !selectedEvent.start.dateTime;
+    const isAllDay = editingEvent.start.date && !editingEvent.start.dateTime;
     const allDayCheckbox = document.getElementById('eventAllDay');
     allDayCheckbox.checked = isAllDay;
     
     if (isAllDay) {
         // All-day event
-        document.getElementById('eventStartDate').value = selectedEvent.start.date;
-        document.getElementById('eventEndDate').value = selectedEvent.end.date;
+        document.getElementById('eventStartDate').value = editingEvent.start.date;
+        document.getElementById('eventEndDate').value = editingEvent.end.date;
     } else {
         // Timed event
-        const startDate = new Date(selectedEvent.start.dateTime);
-        const endDate = new Date(selectedEvent.end.dateTime);
+        const startDate = new Date(editingEvent.start.dateTime);
+        const endDate = new Date(editingEvent.end.dateTime);
         document.getElementById('eventStartDate').value = startDate.toISOString().split('T')[0];
         document.getElementById('eventStartTime').value = startDate.toTimeString().slice(0, 5);
         document.getElementById('eventEndDate').value = endDate.toISOString().split('T')[0];
