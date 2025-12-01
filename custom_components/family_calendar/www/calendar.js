@@ -12,6 +12,27 @@ let isInitialized = false;
 // Version identifier for debugging cache issues
 console.log('*** CALENDAR.JS VERSION: 2024-12-01-v2 ***');
 
+// Toast notification function
+function showToast(message, type = 'success', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon"></div>
+        <div class="toast-message">${message}</div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
 const API_ENDPOINTS = {
     CONFIG: '/api/family_calendar/config',
     WEATHER: '/api/family_calendar/weather',
@@ -655,11 +676,11 @@ function closeEventModal() {
 
 window.deleteSelectedEvent = async function() {
     if (!selectedEvent) {
-        alert('No event selected.');
+        showToast('No event selected', 'error');
         return;
     }
     if (!selectedEventId) {
-        alert('This event cannot be deleted because no identifier was provided by the calendar.');
+        showToast('This event cannot be deleted (no identifier provided)', 'error', 4000);
         return;
     }
     if (!confirm('Are you sure you want to delete this event?')) {
@@ -691,24 +712,24 @@ window.deleteSelectedEvent = async function() {
         if (!response.ok) {
             const errorText = await response.text();
             debug(`Delete failed: ${response.status} - ${errorText}`);
-            alert('Failed to delete event: ' + response.status + '\n' + errorText);
+            showToast(`Failed to delete event: ${response.status}`, 'error', 5000);
             return;
         }
         
         await response.json();
-        alert('Event deleted successfully.');
+        showToast('Event deleted successfully', 'success');
         closeEventModal();
         await renderWeek();
     } catch (error) {
         debug('Error deleting event: ' + error.message);
-        alert('Error deleting event: ' + error.message);
+        showToast('Error deleting event: ' + error.message, 'error', 5000);
     }
 }
 
 window.editSelectedEvent = function() {
     if (!selectedEvent) {
         console.error('No event selected to edit.');
-        alert('Error: No event selected. Please try again.');
+        showToast('No event selected to edit', 'error');
         return;
     }
 
@@ -1006,7 +1027,7 @@ window.submitEvent = async function(event) {
             }
             
             debug('Event updated successfully');
-            alert('Event updated successfully!');
+            showToast('Event updated successfully!', 'success');
         } else {
             // Create new event
             const response = await fetch(API_ENDPOINTS.ADD_EVENT, {
@@ -1021,7 +1042,7 @@ window.submitEvent = async function(event) {
             }
             
             debug('Event created successfully');
-            alert('Event created successfully!');
+            showToast('Event created successfully!', 'success');
         }
 
         closeAddEventModal();
@@ -1031,7 +1052,7 @@ window.submitEvent = async function(event) {
         await renderWeek();
     } catch (error) {
         console.error('Error submitting event:', error);
-        alert('Error: ' + error.message);
+        showToast('Error: ' + error.message, 'error', 5000);
     }
 }
 
@@ -1075,7 +1096,7 @@ window.refreshCalendar = async function() {
         console.log('Calendar refreshed successfully');
     } catch (error) {
         console.error('Error refreshing calendar:', error);
-        alert('Error refreshing calendar: ' + error.message);
+        showToast('Error refreshing calendar: ' + error.message, 'error', 5000);
     } finally {
         if (refreshBtn) {
             refreshBtn.disabled = false;
