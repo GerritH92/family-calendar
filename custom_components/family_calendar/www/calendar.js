@@ -50,9 +50,9 @@ function showConfirm(message, title = 'Confirm', actionButtonText = 'Confirm', i
         
         // Style button based on action type
         if (isDangerous) {
-            actionButton.className = 'delete-button';
+            actionButton.className = 'btn btn-danger';
         } else {
-            actionButton.className = 'submit-button';
+            actionButton.className = 'btn btn-primary';
         }
         
         modal.style.display = 'flex';

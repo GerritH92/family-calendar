@@ -39,8 +39,8 @@
     <div id="toast-container"></div>
     
     <!-- Confirmation Modal -->
-    <div class="modal-overlay" id="confirm-modal" style="display: none;">
-        <div class="modal-content">
+    <div class="modal-overlay" id="confirm-modal" style="display: none;" onclick="closeConfirmModal(false)">
+        <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="confirm-title">Confirm</h3>
             </div>
@@ -48,8 +48,8 @@
                 <p id="confirm-message"></p>
             </div>
             <div class="modal-footer">
-                <button class="cancel-button" onclick="closeConfirmModal(false)">Cancel</button>
-                <button class="delete-button" id="confirm-action-button" onclick="closeConfirmModal(true)">Confirm</button>
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal(false)">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-action-button" onclick="closeConfirmModal(true)">Confirm</button>
             </div>
         </div>
     </div>
