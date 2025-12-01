@@ -63,7 +63,7 @@
             </div>
             <div class="modal-footer" id="event-details-modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Close</button>
-                <button type="button" class="btn btn-primary" id="modal-edit-button" onclick="editSelectedEvent()">Edit Event</button>
+                <button type="button" class="btn btn-primary" id="modal-edit-button" onclick="console.log('Edit button clicked!'); if(typeof window.editSelectedEvent === 'function') { window.editSelectedEvent(); } else { console.error('window.editSelectedEvent is not a function!', typeof window.editSelectedEvent); }">Edit Event</button>
                 <button type="button" class="btn btn-danger" id="modal-delete-button" onclick="deleteSelectedEvent()">Delete Event</button>
             </div>
         </div>
