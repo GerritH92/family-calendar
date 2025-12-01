@@ -8,9 +8,39 @@ let activeFilters = new Set();
 let selectedEvent = null;
 let editingEvent = null;
 let isInitialized = false;
+let currentLanguage = 'en';
 
 // Version identifier for debugging cache issues
-console.log('*** CALENDAR.JS VERSION: 2024-12-01-v2 ***');
+console.log('*** CALENDAR.JS VERSION: 2024-12-01-v3 ***');
+
+// Translation helper function
+function t(key) {
+    return translations[currentLanguage][key] || translations['en'][key] || key;
+}
+
+// Detect language from Home Assistant or browser
+function detectLanguage() {
+    try {
+        // Try to get language from Home Assistant parent window
+        if (window.parent && window.parent.document && window.parent.document.documentElement) {
+            const hassLang = window.parent.document.documentElement.lang;
+            if (hassLang && translations[hassLang.split('-')[0]]) {
+                return hassLang.split('-')[0];
+            }
+        }
+    } catch (e) {
+        console.log('Could not access parent window language');
+    }
+    
+    // Fallback to browser language
+    const browserLang = navigator.language || navigator.userLanguage;
+    const langCode = browserLang.split('-')[0];
+    return translations[langCode] ? langCode : 'en';
+}
+
+// Initialize language
+currentLanguage = detectLanguage();
+console.log(`Language detected: ${currentLanguage}`);
 
 // Toast notification function
 function showToast(message, type = 'success', duration = 3000) {
@@ -285,7 +315,7 @@ function renderFilters() {
     filterList.innerHTML = '';
     
     if (calendars.length === 0) {
-        filterList.innerHTML = '<div style="color: #999; font-style: italic; padding: 10px;">No calendars found</div>';
+        filterList.innerHTML = `<div style="color: #999; font-style: italic; padding: 10px;">${t('noCalendarsFound')}</div>`;
         return;
     }
     
@@ -510,10 +540,8 @@ async function renderWeek() {
     
     debug(`Total events fetched: ${allEvents.length}`);
     
-    const monthNames = ["januari", "februari", "maart", "april", "mei", "juni",
-                       "juli", "augustus", "september", "oktober", "november", "december"];
-    const startMonth = monthNames[weekDays[0].getMonth()];
-    const endMonth = monthNames[weekDays[6].getMonth()];
+    const startMonth = t('months')[weekDays[0].getMonth()];
+    const endMonth = t('months')[weekDays[6].getMonth()];
     const year = weekDays[0].getFullYear();
     
     const weekTitle = startMonth === endMonth 
@@ -543,8 +571,7 @@ async function renderWeek() {
             dayColumn.classList.add('today');
         }
         
-        const dayNames = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
-        const dayName = dayNames[day.getDay()];
+        const dayName = t('days')[day.getDay()];
         
         // Find weather for this day
         let weatherHtml = '';
@@ -606,7 +633,7 @@ async function renderWeek() {
         });
         
         if (dayEvents.length === 0) {
-            dayEventsDiv.innerHTML = '<div class="no-events">Geen afspraken</div>';
+            dayEventsDiv.innerHTML = `<div class="no-events">${t('noEvents')}</div>`;
         } else {
             dayEvents.forEach(event => {
                 const eventDiv = document.createElement('div');
@@ -657,12 +684,12 @@ function showEventDetails(event) {
         })} - ${endTime.toLocaleTimeString('nl-NL', {hour: '2-digit', minute: '2-digit'})}`;
     } else if (event.start.date) {
         const startDate = new Date(event.start.date + 'T00:00:00');
-        timeHtml = startDate.toLocaleDateString('nl-NL', {
+        timeHtml = startDate.toLocaleDateString(currentLanguage === 'nl' ? 'nl-NL' : 'en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
             day: 'numeric'
-        }) + ' (hele dag)';
+        }) + ` (${t('allDay')})`;
     }
     document.getElementById('modal-event-time').textContent = timeHtml;
     
@@ -711,18 +738,18 @@ function closeEventModal() {
 
 window.deleteSelectedEvent = async function() {
     if (!selectedEvent) {
-        showToast('No event selected', 'error');
+        showToast(t('noEventSelected'), 'error');
         return;
     }
     if (!selectedEventId) {
-        showToast('This event cannot be deleted (no identifier provided)', 'error', 4000);
+        showToast(t('cannotDeleteEvent'), 'error', 4000);
         return;
     }
     
     const confirmed = await showConfirm(
-        'Are you sure you want to delete this event?',
-        'Delete Event',
-        'Delete',
+        t('deleteEventConfirm'),
+        t('deleteEvent'),
+        t('delete'),
         true
     );
     
@@ -760,19 +787,19 @@ window.deleteSelectedEvent = async function() {
         }
         
         await response.json();
-        showToast('Event deleted successfully', 'success');
+        showToast(t('eventDeletedSuccess'), 'success');
         closeEventModal();
         await renderWeek();
     } catch (error) {
         debug('Error deleting event: ' + error.message);
-        showToast('Error deleting event: ' + error.message, 'error', 5000);
+        showToast(t('errorPrefix') + error.message, 'error', 5000);
     }
 }
 
 window.editSelectedEvent = function() {
     if (!selectedEvent) {
         console.error('No event selected to edit.');
-        showToast('No event selected to edit', 'error');
+        showToast(t('noEventToEdit'), 'error');
         return;
     }
 
@@ -809,7 +836,7 @@ window.editSelectedEvent = function() {
     
     // Populate calendar dropdown first
     const calendarSelect = document.getElementById('eventCalendar');
-    calendarSelect.innerHTML = '<option value="">Select a calendar</option>';
+    calendarSelect.innerHTML = `<option value="">${t('selectCalendar')}</option>`;
     calendars.forEach(cal => {
         const calName = names[cal] || cal.replace('calendar.', '').replace(/_/g, ' ');
         const option = document.createElement('option');
@@ -847,8 +874,8 @@ window.editSelectedEvent = function() {
     window.toggleTimeInputs();
     
     // Update modal title and button text
-    document.getElementById('add-event-modal-title').textContent = 'Edit Event';
-    document.getElementById('submit-event-button').textContent = 'Update Event';
+    document.getElementById('add-event-modal-title').textContent = t('editEvent');
+    document.getElementById('submit-event-button').textContent = t('updateEvent');
     
     console.log('About to open modal with id: add-event-modal');
     
@@ -912,7 +939,7 @@ window.openAddEventModal = function() {
     const calendarSelect = document.getElementById('eventCalendar');
     
     // Populate calendar dropdown
-    calendarSelect.innerHTML = '<option value="">Select a calendar</option>';
+    calendarSelect.innerHTML = `<option value="">${t('selectCalendar')}</option>`;
     calendars.forEach(cal => {
         const calName = names[cal] || cal.replace('calendar.', '').replace(/_/g, ' ');
         const option = document.createElement('option');
@@ -947,8 +974,8 @@ window.openAddEventModal = function() {
     toggleTimeInputs();
     
     // Reset modal title and button text
-    document.getElementById('add-event-modal-title').textContent = 'Add New Event';
-    document.getElementById('submit-event-button').textContent = 'Create Event';
+    document.getElementById('add-event-modal-title').textContent = t('addNewEvent');
+    document.getElementById('submit-event-button').textContent = t('createEvent');
     
     debug('Adding show class to modal');
     modal.classList.add('show');
@@ -997,8 +1024,8 @@ window.closeAddEventModal = function() {
         document.getElementById('addEventForm').reset();
         editingEvent = null;
         // Reset modal title and button text
-        document.getElementById('add-event-modal-title').textContent = 'Add New Event';
-        document.getElementById('submit-event-button').textContent = 'Create Event';
+        document.getElementById('add-event-modal-title').textContent = t('addNewEvent');
+        document.getElementById('submit-event-button').textContent = t('createEvent');
     }
 }
 
@@ -1070,7 +1097,7 @@ window.submitEvent = async function(event) {
             }
             
             debug('Event updated successfully');
-            showToast('Event updated successfully!', 'success');
+            showToast(t('eventUpdatedSuccess'), 'success');
         } else {
             // Create new event
             const response = await fetch(API_ENDPOINTS.ADD_EVENT, {
@@ -1085,7 +1112,7 @@ window.submitEvent = async function(event) {
             }
             
             debug('Event created successfully');
-            showToast('Event created successfully!', 'success');
+            showToast(t('eventCreatedSuccess'), 'success');
         }
 
         closeAddEventModal();
