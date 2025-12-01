@@ -1025,6 +1025,9 @@ window.submitEvent = async function(event) {
         }
 
         closeAddEventModal();
+        
+        // Wait a moment for backend to sync, then refresh
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await renderWeek();
     } catch (error) {
         console.error('Error submitting event:', error);
@@ -1054,8 +1057,31 @@ if (document.readyState === 'loading') {
 // Manual refresh function
 window.refreshCalendar = async function() {
     console.log('Manual refresh triggered');
-    await loadConfig();
-    await renderWeek();
+    const refreshBtn = document.querySelector('.refresh-button');
+    
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.style.opacity = '0.5';
+    }
+    
+    try {
+        // Clear any cached event data
+        await loadConfig();
+        
+        // Add a small delay to allow backend to sync
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        await renderWeek();
+        console.log('Calendar refreshed successfully');
+    } catch (error) {
+        console.error('Error refreshing calendar:', error);
+        alert('Error refreshing calendar: ' + error.message);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+        }
+    }
 };
 
 // Auto-refresh every 1 minute (60000 ms)
