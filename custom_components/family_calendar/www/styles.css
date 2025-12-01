@@ -454,6 +454,10 @@ body {
     display: flex;
 }
 
+#confirm-modal {
+    z-index: 10001;
+}
+
 .modal {
     background: var(--surface);
     border-radius: 12px;
