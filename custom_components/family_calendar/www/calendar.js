@@ -1118,36 +1118,6 @@ if (document.readyState === 'loading') {
     init();
 }
 
-// Manual refresh function
-window.refreshCalendar = async function() {
-    console.log('Manual refresh triggered');
-    const refreshBtn = document.querySelector('.refresh-button');
-    
-    if (refreshBtn) {
-        refreshBtn.disabled = true;
-        refreshBtn.style.opacity = '0.5';
-    }
-    
-    try {
-        // Clear any cached event data
-        await loadConfig();
-        
-        // Add a small delay to allow backend to sync
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        await renderWeek();
-        console.log('Calendar refreshed successfully');
-    } catch (error) {
-        console.error('Error refreshing calendar:', error);
-        showToast('Error refreshing calendar: ' + error.message, 'error', 5000);
-    } finally {
-        if (refreshBtn) {
-            refreshBtn.disabled = false;
-            refreshBtn.style.opacity = '1';
-        }
-    }
-};
-
 // Auto-refresh every 1 minute (60000 ms)
 setInterval(() => {
     debug('Auto-refresh: fetching latest config and events');
