@@ -33,6 +33,41 @@ function showToast(message, type = 'success', duration = 3000) {
     }, duration);
 }
 
+// Custom confirmation modal
+let confirmResolve = null;
+
+function showConfirm(message, title = 'Confirm', actionButtonText = 'Confirm', isDangerous = false) {
+    return new Promise((resolve) => {
+        confirmResolve = resolve;
+        const modal = document.getElementById('confirm-modal');
+        const titleElement = document.getElementById('confirm-title');
+        const messageElement = document.getElementById('confirm-message');
+        const actionButton = document.getElementById('confirm-action-button');
+        
+        titleElement.textContent = title;
+        messageElement.textContent = message;
+        actionButton.textContent = actionButtonText;
+        
+        // Style button based on action type
+        if (isDangerous) {
+            actionButton.className = 'delete-button';
+        } else {
+            actionButton.className = 'submit-button';
+        }
+        
+        modal.style.display = 'flex';
+    });
+}
+
+function closeConfirmModal(result) {
+    const modal = document.getElementById('confirm-modal');
+    modal.style.display = 'none';
+    if (confirmResolve) {
+        confirmResolve(result);
+        confirmResolve = null;
+    }
+}
+
 const API_ENDPOINTS = {
     CONFIG: '/api/family_calendar/config',
     WEATHER: '/api/family_calendar/weather',
@@ -683,7 +718,15 @@ window.deleteSelectedEvent = async function() {
         showToast('This event cannot be deleted (no identifier provided)', 'error', 4000);
         return;
     }
-    if (!confirm('Are you sure you want to delete this event?')) {
+    
+    const confirmed = await showConfirm(
+        'Are you sure you want to delete this event?',
+        'Delete Event',
+        'Delete',
+        true
+    );
+    
+    if (!confirmed) {
         return;
     }
     
