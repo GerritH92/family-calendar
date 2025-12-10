@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=3.9.0&t=1733570400">
+    <title>Family Calendar v3.9.0</title>
+</head>
+<body>
+    <div class="header-container">
+        <div class="calendar-header">
+            <button class="nav-button" onclick="previousWeek()">‹</button>
+            <div class="week-title" id="week-title">Week View</div>
+            <button class="nav-button" onclick="nextWeek()">›</button>
+        </div>
+        <div class="live-clock">
+            <div class="live-time" id="live-time">00:00</div>
+            <div class="live-date" id="live-date">Loading...</div>
+        </div>
+        <div class="view-toggle">
+            <button class="view-toggle-btn" data-view="month" onclick="switchView('month')">
+                <span class="view-icon">📅</span>
+                <span class="view-label" id="view-label-month">Month</span>
+            </button>
+            <button class="view-toggle-btn active" data-view="week" onclick="switchView('week')">
+                <span class="view-icon">📆</span>
+                <span class="view-label" id="view-label-week">Week</span>
+            </button>
+            <button class="view-toggle-btn" data-view="workingDays" onclick="switchView('workingDays')">
+                <span class="view-icon">💼</span>
+                <span class="view-label" id="view-label-workingDays">Work Week</span>
+            </button>
+        </div>
+        <div class="header-actions">
+            <button class="add-event-button" onclick="openAddEventModal()">+ Add Event</button>
+        </div>
+    </div>
+    
+    <div class="calendar-pills">
+        <div class="pills-label">Calendars</div>
+        <div class="pill-list" id="filterList"></div>
+    </div>
+    <div class="week-grid" id="week-grid">
+        Loading...
+    </div>
+    
+    <!-- Toast notification container -->
+    <div id="toast-container"></div>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirm-modal" onclick="closeConfirmModal(false)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="confirm-title">Confirm</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal(false)">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-action-button" onclick="closeConfirmModal(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Event Details Modal -->
+    <div class="modal-overlay" id="modal-overlay" data-modal-name="event-details" onclick="closeEventModal()">
+        <div class="modal" id="event-details-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="event-details-modal-header">
+                <h2 class="modal-title" id="modal-event-title">Event Details</h2>
+                <button class="modal-close" onclick="closeEventModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="event-details-modal-body">
+                <div class="modal-field">
+                    <div class="modal-label">Time</div>
+                    <div class="modal-value" id="modal-event-time"></div>
+                </div>
+                <div class="modal-field">
+                    <div class="modal-label">Calendar</div>
+                    <div class="modal-value">
+                        <span class="modal-calendar-badge" id="modal-event-calendar"></span>
+                    </div>
+                </div>
+                <div class="modal-field" id="modal-event-location-field" style="display: none;">
+                    <div class="modal-label">Location</div>
+                    <div class="modal-value" id="modal-event-location"></div>
+                </div>
+                <div class="modal-field" id="modal-event-description-field" style="display: none;">
+                    <div class="modal-label">Description</div>
+                    <div class="modal-value" id="modal-event-description"></div>
+                </div>
+            </div>
+            <div class="modal-footer" id="event-details-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Close</button>
+                <button type="button" class="btn btn-primary" id="modal-edit-button" onclick="console.log('Edit button clicked!'); if(typeof window.editSelectedEvent === 'function') { window.editSelectedEvent(); } else { console.error('window.editSelectedEvent is not a function!', typeof window.editSelectedEvent); }">Edit Event</button>
+                <button type="button" class="btn btn-danger" id="modal-delete-button" onclick="deleteSelectedEvent()">Delete Event</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Event Modal -->
+    <div class="modal-overlay" id="add-event-modal" data-modal-name="add-edit-event" onclick="closeAddEventModal()">
+        <div class="modal" id="add-event-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="add-event-modal-header">
+                <h2 class="modal-title" id="add-event-modal-title">Add New Event</h2>
+                <button class="modal-close" onclick="closeAddEventModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="add-event-modal-body">
+                <form id="addEventForm" onsubmit="submitEvent(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="eventTitle">Event Title *</label>
+                        <input type="text" id="eventTitle" class="form-input modal-input-large" required placeholder="Enter event title">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="eventCalendar">Calendar *</label>
+                        <select id="eventCalendar" class="form-select" required>
+                            <option value="">Select a calendar</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row-center">
+                        <label class="switch">
+                            <input type="checkbox" id="eventAllDay" onchange="toggleTimeInputs()">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="modal-label-inline">All Day Event</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="eventStartDate">Start Date *</label>
+                            <input type="date" id="eventStartDate" class="form-input" required onchange="updateEndDate()">
+                        </div>
+                        <div class="form-group" id="startTimeGroup">
+                            <label class="form-label" for="eventStartTime">Start Time</label>
+                            <input type="time" id="eventStartTime" class="form-input" onchange="updateEndTime()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="eventEndDate">End Date *</label>
+                            <input type="date" id="eventEndDate" class="form-input" required>
+                        </div>
+                        <div class="form-group" id="endTimeGroup">
+                            <label class="form-label" for="eventEndTime">End Time</label>
+                            <input type="time" id="eventEndTime" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="eventDescription">Description</label>
+                        <textarea id="eventDescription" class="form-textarea modal-textarea-description" placeholder="Enter event description"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="eventLocation">Location</label>
+                        <input type="text" id="eventLocation" class="form-input" placeholder="Enter event location">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" id="add-event-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddEventModal()">Cancel</button>
+                <button type="submit" form="addEventForm" class="btn btn-primary" id="submit-event-button">Create Event</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="translations.js?v=3.9.0&t=1733570400"></script>
+    <script src="calendar.js?v=3.9.0&t=1733570400"></script>
+    <script>
+        // Verify the new function is loaded
+        console.log('=== CALENDAR.JS LOADED ===');
+        console.log('editSelectedEvent function exists:', typeof window.editSelectedEvent);
+        console.log('openAddEventModal function exists:', typeof window.openAddEventModal);
+        
+        // Sync dark mode from Home Assistant
+        function syncDarkMode() {
+            const parentHtml = window.parent.document.documentElement;
+            const body = document.body;
+
+            function applyDarkMode() {
+                if (parentHtml.classList.contains('hass-theme-dark') || parentHtml.getAttribute('hass-theme-dark') === 'true') {
+                    body.classList.add('hass-theme-dark');
+                } else {
+                    body.classList.remove('hass-theme-dark');
+                }
+            }
+
+            // Initial check
+            applyDarkMode();
+
+            // Observe changes to the parent HTML class or attributes
+            const observer = new MutationObserver(applyDarkMode);
+            observer.observe(parentHtml, { attributes: true, attributeFilter: ['class', 'hass-theme-dark'] });
+        }
+
+        // Run the sync function
+        syncDarkMode();
+        
+        // Update view labels with translations after page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof t === 'function') {
+                const monthLabel = document.getElementById('view-label-month');
+                const weekLabel = document.getElementById('view-label-week');
+                const workingDaysLabel = document.getElementById('view-label-workingDays');
+                
+                if (monthLabel) monthLabel.textContent = t('viewMonth');
+                if (weekLabel) weekLabel.textContent = t('viewWeek');
+                if (workingDaysLabel) workingDaysLabel.textContent = t('viewWorkingDays');
+            }
+        });
+    </script>
+</body>
+</html>

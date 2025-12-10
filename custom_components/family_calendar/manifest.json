@@ -1,0 +1,12 @@
+{
+  "domain": "family_calendar",
+  "name": "Family Calendar",
+  "codeowners": ["@GerritH92"],
+  "config_flow": true,
+  "dependencies": ["calendar"],
+  "after_dependencies": ["google"],
+  "documentation": "https://github.com/GerritH92/family-calendar",
+  "issue_tracker": "https://github.com/GerritH92/family-calendar/issues",
+  "iot_class": "local_polling",
+  "version": "0.0.1"
+}

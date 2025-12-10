@@ -1,0 +1,48 @@
+add_event:
+  name: Add Event
+  description: Add a new event to a calendar that supports write operations
+  fields:
+    calendar_entity:
+      name: Calendar Entity
+      description: The calendar entity to add the event to
+      required: true
+      example: "calendar.local_calendar"
+      selector:
+        entity:
+          domain: calendar
+    summary:
+      name: Summary
+      description: Event title/summary
+      required: true
+      example: "Team Meeting"
+      selector:
+        text:
+    start_date_time:
+      name: Start Date Time
+      description: Start date and time in format YYYY-MM-DD HH:MM:SS
+      required: true
+      example: "2024-11-25 14:00:00"
+      selector:
+        text:
+    end_date_time:
+      name: End Date Time
+      description: End date and time in format YYYY-MM-DD HH:MM:SS
+      required: true
+      example: "2024-11-25 15:00:00"
+      selector:
+        text:
+    description:
+      name: Description
+      description: Event description
+      required: false
+      example: "Discuss Q4 goals"
+      selector:
+        text:
+          multiline: true
+    location:
+      name: Location
+      description: Event location
+      required: false
+      example: "Conference Room A"
+      selector:
+        text:
